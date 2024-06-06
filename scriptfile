@@ -1,0 +1,110 @@
+import pygame
+import random
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the screen
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Alien Invasion")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+
+# Player
+player_size = 50
+player_pos = [WIDTH // 2, HEIGHT - 2 * player_size]
+player_speed = 10
+
+# Alien
+alien_size = 50
+alien_pos = [random.randint(0, WIDTH - alien_size), 0]
+alien_speed = 5
+
+# Score
+score = 0
+font = pygame.font.SysFont(None, 40)
+
+def set_level(score, alien_speed):
+    if score < 20:
+        alien_speed = 5
+    elif score < 40:
+        alien_speed = 8
+    elif score < 60:
+        alien_speed = 12
+    else:
+        alien_speed = 15
+    return alien_speed
+
+def drop_alien(alien_pos):
+    if alien_pos[1] >= 0 and alien_pos[1] < HEIGHT:
+        alien_pos[1] += alien_speed
+    else:
+        alien_pos[0] = random.randint(0, WIDTH - alien_size)
+        alien_pos[1] = 0
+    return alien_pos
+
+def detect_collision(player_pos, alien_pos):
+    p_x, p_y = player_pos
+    a_x, a_y = alien_pos
+    return (a_x >= p_x and a_x < (p_x + player_size)) or (p_x >= a_x and p_x < (a_x + alien_size)) and \
+           (a_y >= p_y and a_y < (p_y + player_size)) or (p_y >= a_y and p_y < (a_y + alien_size))
+
+# Main game loop
+game_over = False
+clock = pygame.time.Clock()
+
+while not game_over:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            x = player_pos[0]
+            if event.key == pygame.K_LEFT:
+                x -= player_size
+            elif event.key == pygame.K_RIGHT:
+                x += player_size
+            player_pos[0] = x
+
+    screen.fill(BLACK)
+
+    # Move aliens
+    alien_pos = drop_alien(alien_pos)
+
+    # Check for collision
+    if detect_collision(player_pos, alien_pos):
+        game_over = True
+        break
+
+    # Set game speed and level
+    alien_speed = set_level(score, alien_speed)
+
+    # Update score
+    if alien_pos[1] >= HEIGHT:
+        score += 1
+
+    # Draw aliens and player
+    pygame.draw.rect(screen, RED, (player_pos[0], player_pos[1], player_size, player_size))
+    pygame.draw.rect(screen, WHITE, (alien_pos[0], alien_pos[1], alien_size, alien_size))
+
+    # Display score
+    score_display = font.render("Score: " + str(score), True, WHITE)
+    screen.blit(score_display, (10, 10))
+
+    pygame.display.update()
+    clock.tick(30)
+
+# Game over
+screen.fill(BLACK)
+game_over_text = font.render("GAME OVER", True, WHITE)
+screen.blit(game_over_text, (WIDTH//2 - 100, HEIGHT//2 - 50))
+final_score_text = font.render("Final Score: " + str(score), True, WHITE)
+screen.blit(final_score_text, (WIDTH//2 - 100, HEIGHT//2))
+pygame.display.update()
+pygame.time.wait(2000)
+pygame.quit()
+sys.exit()
